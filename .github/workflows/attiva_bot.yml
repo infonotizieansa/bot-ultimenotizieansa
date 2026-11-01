@@ -1,87 +1,17 @@
-<?php
-$rss_url = "https://www.ansa.it/sito/notizie/topnews/topnews_rss.xml";
-$bot_token = "INSERISCI_QUI_IL_TUO_TOKEN"; // <-- METTI QUI IL TUO TOKEN
-$chat_id = "@canaletestfeed";
-$channel_username = "canaletestfeed"; 
-$seen_file = "news_pubblicate.txt";
-$log_file = "diario_bot.txt"; // IL NUOVO FILE DIARI
+name: Bot Ultime Notizie ANSA
 
-if (!file_exists($seen_file)) { file_put_contents($seen_file, ""); }
+on:
+  schedule:
+    # Giorno (07:00 - 22:59): ogni 25 minuti
+    - cron: '*/25 7-22 * * *'
+    # Notte (23:00 - 06:59): ogni 120 minuti (2 ore)
+    - cron: '0 23,1,3,5 * * *'
+  workflow_dispatch:
 
-$seen_links = [];
-if (filesize($seen_file) > 0) {
-    $seen_links = file($seen_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES);
-}
-
-$rss = @simplexml_load_file($rss_url);
-if (!$rss) { die("❌ Errore RSS"); }
-
-// Puliamo il diario all'inizio per leggere solo gli errori di oggi
-file_put_contents($log_file, "--- NUOVA ESECUZIONE: " . date('Y-m-d H:i:s') . " ---\n");
-
-$nuove = 0;
-
-foreach ($rss->channel->item as $item) {
-    $id = isset($item->guid) ? (string)$item->guid : (string)$item->link;
-    $id = trim($id);
-    $title = trim((string)$item->title);
-    
-    // Scriviamo nel diario cosa sta facendo
-    $log = date('H:i:s') . " | Titolo: " . mb_substr($title, 0, 40) . "... | ";
-
-    if (in_array($id, $seen_links)) { 
-        $log .= "SKIP (Già pubblicata in passato)\n";
-        file_put_contents($log_file, $log, FILE_APPEND);
-        continue; 
-    }
-    
-    $description = mb_substr(strip_tags((string)$item->description), 0, 180) . "...";
-    
-    $link_originale = (string)$item->link;
-    $short_link = @file_get_contents("https://is.gd/create.php?format=simple&url=" . urlencode($link_originale));
-    if (!$short_link || strpos($short_link, "http") !== 0) { $short_link = $link_originale; }
-    
-    $emoji = "🌍";
-    $message = "📰 <b>Notizia ANSA - Ultim'Ora</b>\n\n{$emoji} <b>{$title}</b>\n\n{$description}\n\nArticolo completo:\n{$short_link}\n\n📌 <i>Pubblicato su {$chat_id}</i>";
-    
-    $whatsapp_text = urlencode("📰 " . $title . "\n\n" . $description . "\n\nLeggi: " . $short_link . "\n\n👉 Iscriviti: https://t.me/" . $channel_username);
-    
-    $reply_markup = [
-        'inline_keyboard' => [
-            [
-                ['text' => '🔔 Segui il canale', 'url' => 'https://t.me/' . $channel_username],
-                ['text' => '📱 Condividi su WhatsApp', 'url' => 'https://wa.me/?text=' . $whatsapp_text]
-            ]
-        ]
-    ];
-    
-    $url = "https://api.telegram.org/bot{$bot_token}/sendMessage";
-    $data = [
-        'chat_id' => $chat_id,
-        'text' => $message,
-        'parse_mode' => 'HTML',
-        'disable_web_page_preview' => false,
-        'reply_markup' => json_encode($reply_markup)
-    ];
-    $options = ['http' => ['header' => "Content-type: application/x-www-form-urlencoded\r\n", 'method' => 'POST', 'content' => http_build_query($data), 'timeout' => 10]];
-    $context = stream_context_create($options);
-    
-    $result = @file_get_contents($url, false, $context);
-    
-    if ($result !== false) {
-        $seen_links[] = $id;
-        file_put_contents($seen_file, implode("\n", array_slice($seen_links, -100)) . "\n");
-        $nuove++;
-        $log .= "✅ INVIATA CON SUCCESSO\n";
-        sleep(2); // Aumentiamo la pausa a 2 secondi per evitare blocchi di Telegram
-    } else {
-        // Se fallisce, cerchiamo di capire perché leggendo l'errore HTTP
-        $errore_http = isset($http_response_header[0]) ? $http_response_header[0] : "Errore sconosciuto";
-        $log .= "❌ FALLITA! Errore Telegram: " . $errore_http . "\n";
-    }
-    
-    file_put_contents($log_file, $log, FILE_APPEND);
-}
-
-echo "✅ Fine controllo. Pubblicate {$nuove} nuove notizie. Controlla il file 'diario_bot.txt' per i dettagli.";
-?>
+jobs:
+  attiva-bot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Chiama il file PHP su TopHost
+        run: |
+          curl -s -o /dev/null "https://www.risparmitop.it/bot_ultimenotizieansa.php"

@@ -10,13 +10,16 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: run
+        env:
+          TARGET_URL: ${{ secrets.BOT_URL }}
         run: |
-          BASE_URL="https://www.risparmitop.it/bot_ultimenotizieansa.php"
+          echo "::add-mask::$TARGET_URL"
+          
           SUCCESS=false
           
           for i in {1..5}; do
             RAND=$((RANDOM % 9999))
-            URL="${BASE_URL}?v=${RAND}"
+            URL="${TARGET_URL}?v=${RAND}"
             
             case $i in
               1) UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"; LANG="it-IT,it;q=0.9"; REF="https://www.google.it/" ;;

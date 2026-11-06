@@ -11,25 +11,29 @@ jobs:
     steps:
       - name: run
         run: |
-          URL="https://www.risparmitop.it/bot_ultimenotizieansa.php"
+          BASE_URL="https://www.risparmitop.it/bot_ultimenotizieansa.php"
           SUCCESS=false
           
-          UA1="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-          UA2="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"
-          UA3="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0"
-          UA4="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"
-          UA5="Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1"
-          
-          UAS=("$UA1" "$UA2" "$UA3" "$UA4" "$UA5")
-          LANGS=("it-IT,it;q=0.9" "en-US,en;q=0.9" "it-IT,it;q=0.9,en;q=0.8" "en-GB,en;q=0.9" "it-IT;q=1.0")
-
-          for i in {0..4}; do
-            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 -A "${UAS[$i]}" -H "Accept: text/html,application/xhtml+xml" -H "Accept-Language: ${LANGS[$i]}" "$URL")
+          for i in {1..5}; do
+            RAND=$((RANDOM % 9999))
+            URL="${BASE_URL}?v=${RAND}"
+            
+            case $i in
+              1) UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"; LANG="it-IT,it;q=0.9"; REF="https://www.google.it/" ;;
+              2) UA="Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Safari/605.1.15"; LANG="it-IT,it;q=0.9"; REF="https://www.bing.com/" ;;
+              3) UA="Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:121.0) Gecko/20100101 Firefox/121.0"; LANG="en-US,en;q=0.9"; REF="https://duckduckgo.com/" ;;
+              4) UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/119.0.0.0 Safari/537.36"; LANG="it-IT,it;q=0.9,en;q=0.8"; REF="https://www.google.com/" ;;
+              5) UA="Mozilla/5.0 (iPhone; CPU iPhone OS 17_2 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.2 Mobile/15E148 Safari/604.1"; LANG="it-IT;q=1.0"; REF="https://m.google.it/" ;;
+            esac
+            
+            HTTP_CODE=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 -A "$UA" -H "Accept: text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8" -H "Accept-Language: $LANG" -H "Referer: $REF" -H "Cache-Control: no-cache" "$URL")
+            
             if [ "$HTTP_CODE" -eq 200 ]; then
               SUCCESS=true
               break
             fi
-            sleep $((RANDOM % 15 + 10))
+            
+            sleep $((RANDOM % 20 + 15))
           done
 
           if [ "$SUCCESS" = false ]; then

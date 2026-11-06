@@ -10,31 +10,45 @@ jobs:
   attiva-bot:
     runs-on: ubuntu-latest
     steps:
-      - name: Chiama il file PHP su TopHost (con retry)
+      - name: Chiama il file PHP su TopHost (3 tentativi)
         run: |
-          # Primo tentativo
-          if curl --max-time 180 -s -o /dev/null --fail "https://www.risparmitop.it/bot_ultimenotizieansa.php"; then
-            echo "✅ Primo tentativo riuscito"
-            exit 0
+          MAX_TIME=180
+          USER_AGENT="Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+          URL="https://www.risparmitop.it/bot_ultimenotizieansa.php"
+          SUCCESS=0
+          
+          # Tentativo 1
+          echo "🔄 Tentativo 1..."
+          if curl --max-time $MAX_TIME -s -o /dev/null -A "$USER_AGENT" "$URL"; then
+            echo "✅ Tentativo 1 riuscito"
+            SUCCESS=1
+          else
+            echo "⚠️ Tentativo 1 fallito, attendo 15 secondi..."
+            sleep 15
           fi
           
-          echo "⚠️ Primo tentativo fallito, attendo 30 secondi..."
-          sleep 30
-          
-          # Secondo tentativo
-          if curl --max-time 180 -s -o /dev/null --fail "https://www.risparmitop.it/bot_ultimenotizieansa.php"; then
-            echo "✅ Secondo tentativo riuscito"
-            exit 0
+          # Tentativo 2
+          if [ $SUCCESS -eq 0 ]; then
+            echo "🔄 Tentativo 2..."
+            if curl --max-time $MAX_TIME -s -o /dev/null -A "$USER_AGENT" "$URL"; then
+              echo "✅ Tentativo 2 riuscito"
+              SUCCESS=1
+            else
+              echo "⚠️ Tentativo 2 fallito, attendo 30 secondi..."
+              sleep 30
+            fi
           fi
           
-          echo "⚠️ Secondo tentativo fallito, attendo 60 secondi..."
-          sleep 60
-          
-          # Terzo tentativo
-          if curl --max-time 180 -s -o /dev/null --fail "https://www.risparmitop.it/bot_ultimenotizieansa.php"; then
-            echo "✅ Terzo tentativo riuscito"
-            exit 0
+          # Tentativo 3
+          if [ $SUCCESS -eq 0 ]; then
+            echo "🔄 Tentativo 3..."
+            if curl --max-time $MAX_TIME -s -o /dev/null -A "$USER_AGENT" "$URL"; then
+              echo "✅ Tentativo 3 riuscito"
+              SUCCESS=1
+            else
+              echo "❌ Tutti e 3 i tentativi falliti"
+              exit 1
+            fi
           fi
           
-          echo " Tutti i tentativi falliti"
-          exit 1
+          echo "🎉 Bot ANSA completato con successo"

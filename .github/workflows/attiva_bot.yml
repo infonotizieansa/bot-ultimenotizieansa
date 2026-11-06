@@ -10,6 +10,31 @@ jobs:
   attiva-bot:
     runs-on: ubuntu-latest
     steps:
-      - name: Chiama il file PHP su TopHost
+      - name: Chiama il file PHP su TopHost (con retry)
         run: |
-          curl --max-time 300 -s -o /dev/null "https://www.risparmitop.it/bot_ultimenotizieansa.php"
+          # Primo tentativo
+          if curl --max-time 180 -s -o /dev/null --fail "https://www.risparmitop.it/bot_ultimenotizieansa.php"; then
+            echo "✅ Primo tentativo riuscito"
+            exit 0
+          fi
+          
+          echo "⚠️ Primo tentativo fallito, attendo 30 secondi..."
+          sleep 30
+          
+          # Secondo tentativo
+          if curl --max-time 180 -s -o /dev/null --fail "https://www.risparmitop.it/bot_ultimenotizieansa.php"; then
+            echo "✅ Secondo tentativo riuscito"
+            exit 0
+          fi
+          
+          echo "⚠️ Secondo tentativo fallito, attendo 60 secondi..."
+          sleep 60
+          
+          # Terzo tentativo
+          if curl --max-time 180 -s -o /dev/null --fail "https://www.risparmitop.it/bot_ultimenotizieansa.php"; then
+            echo "✅ Terzo tentativo riuscito"
+            exit 0
+          fi
+          
+          echo " Tutti i tentativi falliti"
+          exit 1
